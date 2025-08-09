@@ -51,13 +51,26 @@ resource "aws_iam_role" "cw_canary_iam_role" {
 # Create S3 Bucket
 resource "aws_s3_bucket" "cw_canary_bucket" {
   bucket = "cw-canary-bucket-${random_pet.this.id}"
-  acl    = "private"
+  #acl    = "private" # UPDATED 
   force_destroy = true
 
   tags = {
     Name        = "My bucket"
     Environment = "Dev"
   }
+}
+# Create S3 Bucket Ownership control - ADDED NEW
+resource "aws_s3_bucket_ownership_controls" "example" {
+  bucket = aws_s3_bucket.cw_canary_bucket.id
+  rule {
+    object_ownership = "BucketOwnerPreferred"
+  }
+}
+# Create S3 Bucket ACL - ADDED NEW
+resource "aws_s3_bucket_acl" "example" {
+  depends_on = [aws_s3_bucket_ownership_controls.example]
+  bucket = aws_s3_bucket.cw_canary_bucket.id
+  acl    = "private"
 }
 
 # AWS CloudWatch Canary
@@ -67,7 +80,9 @@ resource "aws_synthetics_canary" "sswebsite2" {
   execution_role_arn   = aws_iam_role.cw_canary_iam_role.arn 
   handler              = "sswebsite2.handler"
   zip_file             = "sswebsite2/sswebsite2v1.zip"
-  runtime_version      = "syn-nodejs-puppeteer-3.1"
+  #runtime_version      = "syn-nodejs-puppeteer-3.1"
+  #runtime_version      = "syn-nodejs-puppeteer-6.0" # UPDATED NOV2023
+  runtime_version      = "syn-nodejs-puppeteer-6.2" # UPDATED AUG2025
   start_canary = true
 
   run_config {
